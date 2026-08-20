@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(45, 212, 191, 0.12), transparent 50%),
+    radial-gradient(900px 500px at 110% 0%, rgba(251, 191, 36, 0.08), transparent 45%),
+    #07090f;
+  color: #e8eefc;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3654 transparent;
+}
+
+.field-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.pos-qb { color: #fbbf24; }
+.pos-rb { color: #34d399; }
+.pos-wr { color: #60a5fa; }
+.pos-te { color: #f472b6; }
+.pos-k { color: #a78bfa; }
+.pos-dst { color: #fb7185; }
