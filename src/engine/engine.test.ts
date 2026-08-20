@@ -40,6 +40,22 @@ describe("draft order", () => {
     expect(formatPick(14, 12)).toBe("2.02");
   });
 
+  it("pre-fills keepers from config/league.json", () => {
+    const settings = defaultSettings();
+    expect(settings.draftType).toBe("keeper");
+    const names = settings.keepers.map((k) => PLAYER_POOL.find((p) => p.id === k.playerId));
+    expect(names.map((p) => p?.name)).toEqual(["George Pickens", "Jameson Williams", "Tucker Kraft"]);
+    expect(names.map((p) => p?.team)).toEqual(["PIT", "DET", "GB"]);
+    expect(settings.keepers.map((k) => k.round)).toEqual([4, 7, 11]);
+    expect(settings.keepers.every((k) => k.teamIndex === settings.userPick)).toBe(true);
+
+    const board = buildBoard(settings);
+    const pickens = names[0]!;
+    const kraft = names[2]!;
+    expect(board.find((p) => p.round === 4 && p.teamIndex === settings.userPick)?.playerId).toBe(pickens.id);
+    expect(board.find((p) => p.round === 11 && p.teamIndex === settings.userPick)?.playerId).toBe(kraft.id);
+  });
+
   it("builds a full board with keepers", () => {
     const settings = defaultSettings();
     settings.draftType = "keeper";

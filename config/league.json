@@ -1,0 +1,19 @@
+{
+  "draftType": "keeper",
+  "keepers": [
+    {
+      "name": "George Pickens",
+      "team": "PIT",
+      "round": 4
+    },
+    {
+      "name": "Jameson Williams",
+      "round": 7
+    },
+    {
+      "name": "Tucker Kraft",
+      "team": "GB",
+      "round": 11
+    }
+  ]
+}

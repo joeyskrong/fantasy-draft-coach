@@ -28,7 +28,7 @@ export const RAW_PLAYERS: RawPlayer[] = [
   { name: "Ashton Jeanty", team: "LV", pos: "RB", bye: 13, adp: 15.3, adpStd: 2.9 },
   { name: "Derrick Henry", team: "BAL", pos: "RB", bye: 13, adp: 17.6, adpStd: 2.5 },
   { name: "A.J. Brown", team: "NE", pos: "WR", bye: 11, adp: 17.9, adpStd: 3.2 },
-  { name: "George Pickens", team: "DAL", pos: "WR", bye: 14, adp: 19.4, adpStd: 2.7 },
+  { name: "George Pickens", team: "PIT", pos: "WR", bye: 9, adp: 19.4, adpStd: 2.7 },
   { name: "Saquon Barkley", team: "PHI", pos: "RB", bye: 10, adp: 20.2, adpStd: 3.5 },
   { name: "Chris Olave", team: "NO", pos: "WR", bye: 8, adp: 21.0, adpStd: 3.5 },
   { name: "Nico Collins", team: "HOU", pos: "WR", bye: 8, adp: 21.4, adpStd: 2.8 },

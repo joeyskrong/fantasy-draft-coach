@@ -5,6 +5,7 @@ import { useDraft } from "../state/draftStore";
 import { scoringPreset } from "../engine/scoring";
 import { defaultCustomOrder } from "../engine/draftOrder";
 import { defaultTeamNames } from "../data/defaults";
+import { keepersFromLeagueConfig } from "../data/leagueConfig";
 import { PLAYER_POOL } from "../data/players";
 import { projectPoints } from "../engine/scoring";
 
@@ -91,13 +92,19 @@ export function SetupPage() {
                 });
               }} />
               <NumberField label="Your pick" min={1} max={settings.teams} value={settings.userPick} onChange={(userPick) => {
-                patch({ userPick, teamNames: defaultTeamNames(settings.teams, userPick) });
+                const keepers = settings.keepers.map((k) =>
+                  k.teamIndex === settings.userPick ? { ...k, teamIndex: userPick } : k,
+                );
+                patch({ userPick, teamNames: defaultTeamNames(settings.teams, userPick), keepers });
               }} />
             </div>
             <div className="mt-4 space-y-3">
               <div>
                 <p className="mb-1 text-xs uppercase tracking-wide text-white/60">Draft type</p>
-                <Segmented value={settings.draftType} onChange={(draftType) => patch({ draftType, keepers: draftType === "redraft" ? [] : settings.keepers })} options={[{ id: "redraft", label: "Redraft" }, { id: "keeper", label: "Keeper" }]} />
+                <Segmented value={settings.draftType} onChange={(draftType) => patch({
+                  draftType,
+                  keepers: draftType === "redraft" ? [] : (settings.keepers.length ? settings.keepers : keepersFromLeagueConfig(settings.userPick)),
+                })} options={[{ id: "redraft", label: "Redraft" }, { id: "keeper", label: "Keeper" }]} />
               </div>
               <div>
                 <p className="mb-1 text-xs uppercase tracking-wide text-white/60">Draft order</p>
@@ -108,6 +115,22 @@ export function SetupPage() {
                 <Segmented value={settings.scoringPreset} onChange={setPreset} options={[{ id: "std", label: "Std" }, { id: "half", label: "0.5 PPR" }, { id: "ppr", label: "PPR" }, { id: "custom", label: "Custom" }]} />
               </div>
             </div>
+            {keepersEnabled && settings.keepers.length > 0 && (
+              <div className="mt-4 rounded-xl border border-field-500/30 bg-field-500/10 p-3">
+                <p className="text-xs uppercase tracking-wide text-field-400">Pre-filled keepers</p>
+                <ul className="mt-2 space-y-1 text-sm">
+                  {settings.keepers.map((k) => {
+                    const p = PLAYER_POOL.find((x) => x.id === k.playerId);
+                    return (
+                      <li key={k.playerId} className="flex justify-between gap-2">
+                        <span>{p?.name} <span className="text-white/45">{p?.team}</span></span>
+                        <span className="font-mono text-white/70">Rd {k.round ?? "start"}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
           </section>
 
           <section className="rounded-2xl border border-white/10 bg-ink-800/70 p-5">
@@ -177,7 +200,9 @@ export function SetupPage() {
           {!keepersEnabled && <p className="mt-2 text-sm text-white/60">Switch draft type to Keeper to add players.</p>}
           {keepersEnabled && (
             <>
-              <p className="mt-2 text-sm text-white/60">Leave round blank to keep the player at the beginning of the draft (consumes that team&apos;s next open pick).</p>
+              <p className="mt-2 text-sm text-white/60">
+                Loaded from <span className="font-mono text-field-400">config/league.json</span>. Leave round blank to keep the player at the beginning of the draft (consumes that team&apos;s next open pick).
+              </p>
               <input
                 className="mt-4 w-full rounded-md border border-white/10 bg-ink-900 px-3 py-2 text-sm outline-none focus:border-field-500"
                 placeholder="Search players to keep"
@@ -191,7 +216,7 @@ export function SetupPage() {
                     className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-white/5"
                     onClick={() => {
                       if (settings.keepers.some((k) => k.playerId === p.id)) return;
-                      patch({ keepers: [...settings.keepers, { playerId: p.id, teamIndex: 1, round: null }] });
+                      patch({ keepers: [...settings.keepers, { playerId: p.id, teamIndex: settings.userPick, round: null }] });
                     }}
                   >
                     <span>{p.name}</span>
@@ -204,7 +229,7 @@ export function SetupPage() {
                   const p = PLAYER_POOL.find((x) => x.id === k.playerId);
                   return (
                     <div key={`${k.playerId}-${i}`} className="grid grid-cols-12 items-center gap-2 rounded-lg bg-ink-900 p-2 text-sm">
-                      <div className="col-span-4">{p?.name}</div>
+                      <div className="col-span-4">{p?.name} <span className="text-white/45">{p?.team}</span></div>
                       <label className="col-span-3 text-xs text-white/50">
                         Team
                         <input type="number" min={1} max={settings.teams} className="ml-2 w-16 rounded bg-ink-800 px-1 py-0.5 font-mono text-white" value={k.teamIndex} onChange={(e) => {

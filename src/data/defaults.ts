@@ -1,6 +1,7 @@
 import type { LeagueSettings, RosterSlots, Scoring } from "../types";
 import { scoringPreset } from "../engine/scoring";
 import { defaultCustomOrder } from "../engine/draftOrder";
+import { keepersFromLeagueConfig, LEAGUE_CONFIG } from "./leagueConfig";
 
 export const DEFAULT_ROSTER: RosterSlots = {
   qb: 1,
@@ -28,12 +29,12 @@ export function defaultSettings(): LeagueSettings {
   return {
     teams,
     userPick,
-    draftType: "redraft",
+    draftType: LEAGUE_CONFIG.draftType ?? "keeper",
     orderType: "snake",
     scoringPreset: "ppr",
     scoring: scoringPreset("ppr"),
     roster,
-    keepers: [],
+    keepers: keepersFromLeagueConfig(userPick),
     customOrder: defaultCustomOrder(teams, rounds),
     teamNames: defaultTeamNames(teams, userPick),
   };
