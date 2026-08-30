@@ -53,6 +53,12 @@ export function buildBoard(settings: LeagueSettings): DraftPick[] {
   return picks;
 }
 
+export function refreshKeeperPicks(picks: DraftPick[], settings: LeagueSettings): DraftPick[] {
+  const live = picks.map((p) => (p.keeper ? { ...p, playerId: null, keeper: false } : { ...p }));
+  applyKeepers(live, settings);
+  return live;
+}
+
 function applyKeepers(picks: DraftPick[], settings: LeagueSettings) {
   for (const k of settings.keepers) {
     if (k.round == null) {

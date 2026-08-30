@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { availability, normalCdf } from "../engine/availability";
-import { formatPick, ownerForPick, snakeOwner, buildBoard, totalPicks } from "../engine/draftOrder";
+import { formatPick, ownerForPick, snakeOwner, buildBoard, totalPicks, refreshKeeperPicks } from "../engine/draftOrder";
 import { scoringPreset, projectPoints } from "../engine/scoring";
 import { rankPlayers } from "../engine/vor";
 import { remainingNeeds, positionExpectedValue, bestNeedPlan, allPositionEVs } from "../engine/pdr";
@@ -65,6 +65,23 @@ describe("draft order", () => {
     const chase = PLAYER_POOL.find((p) => p.name === "Ja'Marr Chase")!;
     expect(board.find((p) => p.round === 4 && p.teamIndex === 7)?.playerId).toBe(pickens.id);
     expect(board.find((p) => p.round === 1 && p.teamIndex === 4)?.playerId).toBe(chase.id);
+    expect(board.find((p) => p.round === 5 && p.teamIndex === 1)?.playerId).toBe(
+      PLAYER_POOL.find((p) => p.name === "David Montgomery")!.id,
+    );
+    expect(board.find((p) => p.round === 1 && p.teamIndex === 1)?.playerId).toBeNull();
+
+    const stale = buildBoard({
+      ...settings,
+      keepers: settings.keepers.map((k) =>
+        k.playerId === PLAYER_POOL.find((p) => p.name === "David Montgomery")!.id ? { ...k, round: null } : k,
+      ),
+    });
+    expect(stale.find((p) => p.round === 1 && p.teamIndex === 1)?.keeper).toBe(true);
+    const refreshed = refreshKeeperPicks(stale, settings);
+    expect(refreshed.find((p) => p.round === 1 && p.teamIndex === 1)?.playerId).toBeNull();
+    expect(refreshed.find((p) => p.round === 5 && p.teamIndex === 1)?.playerId).toBe(
+      PLAYER_POOL.find((p) => p.name === "David Montgomery")!.id,
+    );
   });
 
   it("builds a full board with keepers", () => {

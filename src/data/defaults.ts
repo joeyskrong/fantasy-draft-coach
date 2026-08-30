@@ -43,3 +43,14 @@ export function defaultSettings(): LeagueSettings {
 export function withScoring(settings: LeagueSettings, scoring: Scoring, preset: LeagueSettings["scoringPreset"]): LeagueSettings {
   return { ...settings, scoring, scoringPreset: preset };
 }
+
+export function withLatestKeepers(settings: LeagueSettings): LeagueSettings {
+  const latest = defaultSettings();
+  return {
+    ...settings,
+    keepers: latest.keepers,
+    userPick: latest.userPick,
+    teams: latest.teams,
+    draftType: latest.draftType,
+  };
+}
