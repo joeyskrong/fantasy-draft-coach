@@ -26,7 +26,7 @@
 
     { "name": "George Pickens", "team": "PIT", "teamIndex": 7, "round": 4 },
     { "name": "Jameson Williams", "teamIndex": 7, "round": 7 },
-    { "name": "Tucker Kraft", "team": "GB", "teamIndex": 7, "round": 11 },
+    { "name": "Tucker Kraft", "team": "GB", "teamIndex": 7, "round": 10 },
 
     { "name": "Emeka Egbuka", "teamIndex": 8, "round": 4 },
     { "name": "Chase Brown", "teamIndex": 8, "round": 6 },

@@ -54,7 +54,7 @@ describe("draft order", () => {
       "Jameson Williams",
       "Tucker Kraft",
     ]);
-    expect(yours.map((k) => k.round)).toEqual([4, 7, 11]);
+    expect(yours.map((k) => k.round)).toEqual([4, 7, 10]);
 
     const monty = settings.keepers.find((k) => PLAYER_POOL.find((p) => p.id === k.playerId)?.name === "David Montgomery");
     expect(monty?.teamIndex).toBe(1);
@@ -64,6 +64,9 @@ describe("draft order", () => {
     const pickens = PLAYER_POOL.find((p) => p.name === "George Pickens")!;
     const chase = PLAYER_POOL.find((p) => p.name === "Ja'Marr Chase")!;
     expect(board.find((p) => p.round === 4 && p.teamIndex === 7)?.playerId).toBe(pickens.id);
+    expect(board.find((p) => p.round === 10 && p.teamIndex === 7)?.playerId).toBe(
+      PLAYER_POOL.find((p) => p.name === "Tucker Kraft")!.id,
+    );
     expect(board.find((p) => p.round === 1 && p.teamIndex === 4)?.playerId).toBe(chase.id);
     expect(board.find((p) => p.round === 5 && p.teamIndex === 1)?.playerId).toBe(
       PLAYER_POOL.find((p) => p.name === "David Montgomery")!.id,
