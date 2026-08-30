@@ -58,7 +58,7 @@ describe("draft order", () => {
 
     const monty = settings.keepers.find((k) => PLAYER_POOL.find((p) => p.id === k.playerId)?.name === "David Montgomery");
     expect(monty?.teamIndex).toBe(1);
-    expect(monty?.round).toBeNull();
+    expect(monty?.round).toBe(5);
 
     const board = buildBoard(settings);
     const pickens = PLAYER_POOL.find((p) => p.name === "George Pickens")!;

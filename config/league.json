@@ -5,7 +5,7 @@
   "keepers": [
     { "name": "Malik Nabers", "teamIndex": 1, "round": 2 },
     { "name": "Garrett Wilson", "teamIndex": 1, "round": 4 },
-    { "name": "David Montgomery", "teamIndex": 1 },
+    { "name": "David Montgomery", "teamIndex": 1, "round": 5 },
 
     { "name": "Tee Higgins", "teamIndex": 2, "round": 3 },
     { "name": "Travis Etienne Jr.", "teamIndex": 2, "round": 6 },
