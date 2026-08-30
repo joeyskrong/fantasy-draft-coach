@@ -1,19 +1,51 @@
 {
   "draftType": "keeper",
+  "userPick": 7,
+  "teams": 12,
   "keepers": [
-    {
-      "name": "George Pickens",
-      "team": "PIT",
-      "round": 4
-    },
-    {
-      "name": "Jameson Williams",
-      "round": 7
-    },
-    {
-      "name": "Tucker Kraft",
-      "team": "GB",
-      "round": 11
-    }
+    { "name": "Malik Nabers", "teamIndex": 1, "round": 2 },
+    { "name": "Garrett Wilson", "teamIndex": 1, "round": 4 },
+    { "name": "David Montgomery", "teamIndex": 1 },
+
+    { "name": "Tee Higgins", "teamIndex": 2, "round": 3 },
+    { "name": "Travis Etienne Jr.", "teamIndex": 2, "round": 6 },
+    { "name": "Ladd McConkey", "teamIndex": 2, "round": 7 },
+
+    { "name": "Amon-Ra St. Brown", "teamIndex": 3, "round": 1 },
+    { "name": "Brock Bowers", "teamIndex": 3, "round": 9 },
+
+    { "name": "Ja'Marr Chase", "teamIndex": 4, "round": 1 },
+    { "name": "Kenneth Walker III", "teamIndex": 4, "round": 2 },
+    { "name": "C.J. Stroud", "teamIndex": 4, "round": 12 },
+
+    { "name": "Bucky Irving", "teamIndex": 5, "round": 10 },
+
+    { "name": "D'Andre Swift", "teamIndex": 6, "round": 5 },
+    { "name": "Jayden Daniels", "teamIndex": 6, "round": 7 },
+    { "name": "Caleb Williams", "teamIndex": 6, "round": 13 },
+
+    { "name": "George Pickens", "team": "PIT", "teamIndex": 7, "round": 4 },
+    { "name": "Jameson Williams", "teamIndex": 7, "round": 7 },
+    { "name": "Tucker Kraft", "team": "GB", "teamIndex": 7, "round": 11 },
+
+    { "name": "Emeka Egbuka", "teamIndex": 8, "round": 4 },
+    { "name": "Chase Brown", "teamIndex": 8, "round": 6 },
+    { "name": "Chris Olave", "teamIndex": 8, "round": 8 },
+
+    { "name": "Jahmyr Gibbs", "teamIndex": 9, "round": 1 },
+    { "name": "A.J. Brown", "teamIndex": 9, "round": 2 },
+    { "name": "DeVonta Smith", "teamIndex": 9, "round": 3 },
+
+    { "name": "Quinshon Judkins", "teamIndex": 10, "round": 5 },
+    { "name": "Jaxon Smith-Njigba", "teamIndex": 10, "round": 6 },
+    { "name": "Colston Loveland", "teamIndex": 10, "round": 10 },
+
+    { "name": "Tetairoa McMillan", "teamIndex": 11, "round": 3 },
+    { "name": "Jaylen Waddle", "teamIndex": 11, "round": 7 },
+    { "name": "Javonte Williams", "teamIndex": 11, "round": 8 },
+
+    { "name": "De'Von Achane", "teamIndex": 12, "round": 1 },
+    { "name": "Josh Allen", "teamIndex": 12, "round": 3 },
+    { "name": "Rome Odunze", "teamIndex": 12, "round": 6 }
   ]
 }

@@ -22,8 +22,8 @@ export function defaultTeamNames(n: number, userPick = 1): string[] {
 }
 
 export function defaultSettings(): LeagueSettings {
-  const teams = 12;
-  const userPick = 3;
+  const teams = LEAGUE_CONFIG.teams ?? 12;
+  const userPick = LEAGUE_CONFIG.userPick ?? 7;
   const roster = { ...DEFAULT_ROSTER, flex1Pos: [...DEFAULT_ROSTER.flex1Pos], flex2Pos: [...DEFAULT_ROSTER.flex2Pos] };
   const rounds = roster.qb + roster.rb + roster.wr + roster.te + roster.k + roster.dst + roster.flex1 + roster.flex2 + roster.bench;
   return {

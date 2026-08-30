@@ -8,6 +8,7 @@ import { recommend } from "../engine/recommend";
 import { gradeDraft } from "../engine/grades";
 import { createDraft } from "../state/draftStore";
 import { defaultSettings } from "../data/defaults";
+import { LEAGUE_CONFIG, unresolvedKeepers } from "../data/leagueConfig";
 import { PLAYER_POOL } from "../data/players";
 import { EMPTY_STATS } from "../engine/scoring";
 import type { Player } from "../types";
@@ -43,17 +44,27 @@ describe("draft order", () => {
   it("pre-fills keepers from config/league.json", () => {
     const settings = defaultSettings();
     expect(settings.draftType).toBe("keeper");
-    const names = settings.keepers.map((k) => PLAYER_POOL.find((p) => p.id === k.playerId));
-    expect(names.map((p) => p?.name)).toEqual(["George Pickens", "Jameson Williams", "Tucker Kraft"]);
-    expect(names.map((p) => p?.team)).toEqual(["PIT", "DET", "GB"]);
-    expect(settings.keepers.map((k) => k.round)).toEqual([4, 7, 11]);
-    expect(settings.keepers.every((k) => k.teamIndex === settings.userPick)).toBe(true);
+    expect(settings.userPick).toBe(7);
+    expect(unresolvedKeepers()).toEqual([]);
+    expect(settings.keepers).toHaveLength(LEAGUE_CONFIG.keepers.length);
+
+    const yours = settings.keepers.filter((k) => k.teamIndex === 7);
+    expect(yours.map((k) => PLAYER_POOL.find((p) => p.id === k.playerId)?.name)).toEqual([
+      "George Pickens",
+      "Jameson Williams",
+      "Tucker Kraft",
+    ]);
+    expect(yours.map((k) => k.round)).toEqual([4, 7, 11]);
+
+    const monty = settings.keepers.find((k) => PLAYER_POOL.find((p) => p.id === k.playerId)?.name === "David Montgomery");
+    expect(monty?.teamIndex).toBe(1);
+    expect(monty?.round).toBeNull();
 
     const board = buildBoard(settings);
-    const pickens = names[0]!;
-    const kraft = names[2]!;
-    expect(board.find((p) => p.round === 4 && p.teamIndex === settings.userPick)?.playerId).toBe(pickens.id);
-    expect(board.find((p) => p.round === 11 && p.teamIndex === settings.userPick)?.playerId).toBe(kraft.id);
+    const pickens = PLAYER_POOL.find((p) => p.name === "George Pickens")!;
+    const chase = PLAYER_POOL.find((p) => p.name === "Ja'Marr Chase")!;
+    expect(board.find((p) => p.round === 4 && p.teamIndex === 7)?.playerId).toBe(pickens.id);
+    expect(board.find((p) => p.round === 1 && p.teamIndex === 4)?.playerId).toBe(chase.id);
   });
 
   it("builds a full board with keepers", () => {
