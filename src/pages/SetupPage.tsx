@@ -320,7 +320,7 @@ export function SetupPage() {
         <section className="rounded-2xl border border-white/10 bg-ink-800/70 p-5">
           <h2 className="font-display text-xl uppercase">Consensus projections</h2>
           <p className="mt-2 text-sm text-white/60">
-            Built from August 2026 ADP. After the draft starts you can edit any player&apos;s projection and ADP in the draft room.
+            Built from September 1, 2026 12-team PPR ADP (Fantasy Football Calculator, 8,101 drafts). After the draft starts you can edit any player&apos;s projection and ADP in the draft room.
             Sample PPR values for the current scoring preset:
           </p>
           <div className="mt-4 max-h-96 overflow-auto rounded-lg border border-white/10">

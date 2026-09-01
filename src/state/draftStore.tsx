@@ -5,7 +5,7 @@ import { defaultSettings, withLatestKeepers } from "../data/defaults";
 import { buildBoard, firstOpenOverall, refreshKeeperPicks } from "../engine/draftOrder";
 import { cpuPick } from "../engine/recommend";
 
-const STORAGE_KEY = "fdc.draft.v5";
+const STORAGE_KEY = "fdc.draft.v6";
 
 function uid(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";

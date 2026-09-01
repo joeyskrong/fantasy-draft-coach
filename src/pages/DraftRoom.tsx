@@ -2,18 +2,20 @@ import { useMemo, useState } from "react";
 import type { HighlightColor, Player, Position } from "../types";
 import { Button, PosBadge, Shell } from "../components/ui";
 import { useDraft } from "../state/draftStore";
-import { availablePlayers, recommend } from "../engine/recommend";
+import { availablePlayers, recommend, teamPositions } from "../engine/recommend";
 import { formatPick } from "../engine/draftOrder";
 import { projectPoints } from "../engine/scoring";
 import { rankPlayers } from "../engine/vor";
+import { K_DST_MIN_ROUND, matchesPosFilter, rosterNeedCounts } from "../engine/strategy";
 
-const POS_FILTERS: (Position | "ALL")[] = ["ALL", "QB", "RB", "WR", "TE", "K", "DST"];
+type PosFilter = Position | "ALL" | "FLEX";
+const POS_FILTERS: PosFilter[] = ["ALL", "QB", "RB", "WR", "TE", "FLEX", "K", "DST"];
 const COLORS: HighlightColor[] = ["green", "gold", "red", "blue", "purple"];
 
 export function DraftRoom() {
   const { draft, setScreen, pickPlayer, undo, resetDraft, mockToMe, mockRest, highlight, updatePlayer } = useDraft();
   const [q, setQ] = useState("");
-  const [pos, setPos] = useState<Position | "ALL">("ALL");
+  const [pos, setPos] = useState<PosFilter>("ALL");
   const [tab, setTab] = useState<"board" | "roster" | "queue">("board");
   const [editId, setEditId] = useState<string | null>(null);
   const [onlyMine, setOnlyMine] = useState(false);
@@ -34,10 +36,11 @@ export function DraftRoom() {
   const done = !current;
   const teamName = (i: number) => draft.settings.teamNames[i - 1] ?? `Team ${i}`;
   const filtered = available.filter((p) => {
-    if (pos !== "ALL" && p.pos !== pos) return false;
+    if (!matchesPosFilter(p.pos, pos)) return false;
     if (q && !`${p.name} ${p.team}`.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
+  const needCounts = rosterNeedCounts(draft.settings.roster, teamPositions(draft, draft.settings.userPick));
   const rankedAvail = rankPlayers(filtered, draft.settings.scoring, draft.settings.teams);
   const myPlayers = draft.players.filter((p) =>
     draft.picks.some((pk) => pk.teamIndex === draft.settings.userPick && pk.playerId === p.id),
@@ -73,7 +76,31 @@ export function DraftRoom() {
       <div className="grid gap-4 xl:grid-cols-[320px_1fr_280px]">
         <section className="rounded-2xl border border-white/10 bg-ink-800/70 p-4">
           <h2 className="font-display text-lg uppercase">PDR board</h2>
-          <p className="mb-3 text-xs text-white/50">Tier 1 is the plan. Recalculated every pick.</p>
+          <p className="mb-3 text-xs text-white/50">
+            Recs follow team need and scarcity. Wait on QB unless he falls; K/DST from round {K_DST_MIN_ROUND}.
+          </p>
+          <div className="mb-3 flex flex-wrap gap-1.5 text-[11px]">
+            {(
+              [
+                ["RB", needCounts.rb],
+                ["WR", needCounts.wr],
+                ["TE", needCounts.te],
+                ["FLEX", needCounts.flex],
+                ["QB", needCounts.qb],
+                ["K", needCounts.k],
+                ["DST", needCounts.dst],
+              ] as const
+            ).map(([label, n]) => (
+              <span
+                key={label}
+                className={`rounded-md border px-1.5 py-0.5 font-mono ${
+                  n > 0 ? "border-field-500/40 bg-field-500/10 text-field-400" : "border-white/10 text-white/35"
+                }`}
+              >
+                {label} {n}
+              </span>
+            ))}
+          </div>
           <div className="space-y-2">
             {recs.slice(0, 8).map((r) => (
               <button

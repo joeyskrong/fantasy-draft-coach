@@ -4,7 +4,7 @@ import { formatPick, ownerForPick, snakeOwner, buildBoard, totalPicks, refreshKe
 import { scoringPreset, projectPoints } from "../engine/scoring";
 import { rankPlayers } from "../engine/vor";
 import { remainingNeeds, positionExpectedValue, bestNeedPlan, allPositionEVs } from "../engine/pdr";
-import { recommend } from "../engine/recommend";
+import { recommend, matchesPosFilter } from "../engine/recommend";
 import { gradeDraft } from "../engine/grades";
 import { createDraft } from "../state/draftStore";
 import { defaultSettings } from "../data/defaults";
@@ -155,6 +155,57 @@ describe("recommendations and grades", () => {
     expect(recs[0].recommended).toBe(true);
     expect(["RB", "WR", "TE", "QB"]).toContain(recs[0].pos);
     expect(recs[0].tier).toBe(1);
+  });
+
+  it("prioritizes RB and will not take QB, K, or DST on the first pick", () => {
+    const draft = createDraft(defaultSettings());
+    const recs = recommend(draft);
+    expect(recs[0].pos).toBe("RB");
+    expect(recs.slice(0, 8).some((r) => r.pos === "QB" || r.pos === "K" || r.pos === "DST")).toBe(false);
+  });
+
+  it("holds K and DST until round 9", () => {
+    const draft = createDraft(defaultSettings());
+    const round8 = draft.picks.find((p) => p.teamIndex === draft.settings.userPick && p.round === 8)!;
+    draft.currentOverall = round8.overall;
+    const recs = recommend(draft);
+    expect(recs[0].pos !== "K" && recs[0].pos !== "DST").toBe(true);
+    expect(recs.some((r) => r.recommended && (r.pos === "K" || r.pos === "DST"))).toBe(false);
+  });
+
+  it("will take an elite QB who has fallen well past ADP once RB/FLEX holes are filled", () => {
+    const draft = createDraft(defaultSettings());
+    const rbs = PLAYER_POOL.filter((p) => p.pos === "RB").sort((a, b) => a.adp - b.adp);
+    const wrs = PLAYER_POOL.filter((p) => p.pos === "WR").sort((a, b) => a.adp - b.adp);
+    const userIds = [rbs[4].id, rbs[5].id, wrs[8].id];
+    const already = new Set(draft.picks.filter((p) => p.playerId).map((p) => p.playerId as string));
+    const filler = PLAYER_POOL.filter(
+      (p) => !already.has(p.id) && !userIds.includes(p.id) && p.name !== "Josh Allen" && p.pos !== "K" && p.pos !== "DST",
+    ).sort((a, b) => a.adp - b.adp);
+    let fi = 0;
+    let ui = 0;
+    draft.picks = draft.picks.map((p) => {
+      if (p.playerId) return p;
+      if (p.overall >= 55) return p;
+      if (p.teamIndex === draft.settings.userPick && ui < userIds.length) {
+        return { ...p, playerId: userIds[ui++] };
+      }
+      const next = filler[fi++];
+      return next ? { ...p, playerId: next.id } : p;
+    });
+    const round5 = draft.picks.find((p) => p.teamIndex === draft.settings.userPick && p.round === 5)!;
+    draft.currentOverall = round5.overall;
+    const recs = recommend(draft);
+    expect(recs[0].pos).toBe("QB");
+    expect(["Josh Allen", "Lamar Jackson", "Drake Maye", "Joe Burrow", "Dak Prescott"]).toContain(recs[0].name);
+  });
+
+  it("filters FLEX to RB/WR/TE", () => {
+    expect(matchesPosFilter("RB", "FLEX")).toBe(true);
+    expect(matchesPosFilter("WR", "FLEX")).toBe(true);
+    expect(matchesPosFilter("TE", "FLEX")).toBe(true);
+    expect(matchesPosFilter("QB", "FLEX")).toBe(false);
+    expect(matchesPosFilter("K", "FLEX")).toBe(false);
   });
 
   it("grades a completed mock", () => {

@@ -11,6 +11,8 @@ export function PosBadge({ pos }: { pos: Position | string }) {
           ? "pos-wr bg-sky-400/10 border-sky-400/30"
           : pos === "TE"
             ? "pos-te bg-pink-400/10 border-pink-400/30"
+            : pos === "FLEX"
+              ? "pos-flex bg-teal-400/10 border-teal-400/40"
             : pos === "K"
               ? "pos-k bg-violet-400/10 border-violet-400/30"
               : "pos-dst bg-rose-400/10 border-rose-400/30";

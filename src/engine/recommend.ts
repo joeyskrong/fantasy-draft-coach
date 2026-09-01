@@ -9,6 +9,20 @@ import {
   survivalToPick,
 } from "./pdr";
 import { userPickOveralls } from "./draftOrder";
+import {
+  currentRound,
+  extraordinaryQbValue,
+  fillsFlex,
+  K_DST_MIN_ROUND,
+  matchesPosFilter,
+  QB_WAIT_UNTIL_ROUND,
+  rosterNeedCounts,
+  scarcityBoost,
+  starterNeedFor,
+  strategyWeight,
+} from "./strategy";
+
+export { matchesPosFilter };
 
 export type Recommendation = RankedPlayer & {
   pdr: number;
@@ -39,15 +53,20 @@ export function recommend(state: DraftState): Recommendation[] {
   );
   const lookAhead = Math.min(12, userPicks.length);
   const picks = userPicks.slice(0, lookAhead);
-  const needs = remainingNeeds(
-    state.settings.roster,
-    teamPositions(state, state.settings.userPick),
-    lookAhead,
-  );
+  const drafted = teamPositions(state, state.settings.userPick);
+  const needs = remainingNeeds(state.settings.roster, drafted, lookAhead);
+  const needCounts = rosterNeedCounts(state.settings.roster, drafted);
+  const round = currentRound(state.currentOverall, state.settings.teams);
 
   const evByPick: Record<number, ReturnType<typeof allPositionEVs>> = {};
   for (const pick of picks) {
-    evByPick[pick] = allPositionEVs(pick, available, scoring);
+    const raw = allPositionEVs(pick, available, scoring);
+    const weighted = { ...raw };
+    (Object.keys(weighted) as Position[]).forEach((pos) => {
+      const w = strategyWeight(pos, pick, state.settings.teams, drafted, available);
+      weighted[pos] = { ...weighted[pos], ev: weighted[pos].ev * w };
+    });
+    evByPick[pick] = weighted;
   }
 
   const plan = picks.length && needs.length ? bestNeedPlan(picks, needs, evByPick) : null;
@@ -58,17 +77,59 @@ export function recommend(state: DraftState): Recommendation[] {
     const vor = p.vor;
     const fits = playerFitsNeed(p.pos, targetKey);
     const survive = nextUserPick ? survivalToPick(p, nextUserPick) : 0;
-    const scarcityBoost = fits ? 18 : 0;
+    const starterNeed = starterNeedFor(p.pos, needCounts);
+    const flexNeed = fillsFlex(p.pos, needCounts);
+    const needBoost =
+      starterNeed > 0 ? 22 + starterNeed * 8 : flexNeed ? 12 : p.pos === "RB" || p.pos === "WR" || p.pos === "TE" ? 2 : 0;
+    const zeroRbBoost = p.pos === "RB" && drafted.filter((x) => x === "RB").length === 0 ? 18 : 0;
+    const scarce = scarcityBoost(p.pos, available, state.currentOverall, nextUserPick, starterNeed + (flexNeed ? 1 : 0));
     const waitPenalty = survive * 14;
-    const earlyKickerPenalty = p.pos === "K" || p.pos === "DST" ? Math.max(0, 90 - state.currentOverall) * 0.35 : 0;
-    const pdr = vor + scarcityBoost - waitPenalty - earlyKickerPenalty + reachAdj(p, state.currentOverall);
-    const reason = buildReason(p, fits, targetKey, survive, nextUserPick);
+    const weight = strategyWeight(p.pos, state.currentOverall, state.settings.teams, drafted, available);
+    const earlyKdst =
+      (p.pos === "K" || p.pos === "DST") && round < K_DST_MIN_ROUND ? 220 : 0;
+    const qbWait =
+      p.pos === "QB" && weight < 0.8 && !extraordinaryQbValue(p, state.currentOverall, state.settings.teams, available)
+        ? 36 * (1 - weight)
+        : 0;
+    const extraQb =
+      p.pos === "QB" && extraordinaryQbValue(p, state.currentOverall, state.settings.teams, available) ? 28 : 0;
+    const pdr =
+      vor * Math.min(1, 0.35 + weight) +
+      (fits ? 16 : 0) +
+      needBoost +
+      zeroRbBoost +
+      scarce -
+      waitPenalty -
+      earlyKdst -
+      qbWait +
+      extraQb +
+      reachAdj(p, state.currentOverall);
+    const reason = buildReason({
+      p,
+      fits,
+      targetKey,
+      survive,
+      nextUserPick,
+      starterNeed,
+      flexNeed,
+      round,
+      draftedRbs: drafted.filter((x) => x === "RB").length,
+      extraQb: extraQb > 0,
+    });
     return { ...p, pdr: Math.round(pdr * 10) / 10, tier: 3 as const, reason, nextPickSurvive: survive, recommended: false };
   });
 
   scored.sort((a, b) => b.pdr - a.pdr || b.vor - a.vor);
-  const top = scored[0];
-  const recs = scored.map((p, i) => {
+  const eligible = scored.filter((p) => {
+    if ((p.pos === "K" || p.pos === "DST") && round < K_DST_MIN_ROUND) return false;
+    if (p.pos === "QB" && round < 3 && !extraordinaryQbValue(p, state.currentOverall, state.settings.teams, available)) {
+      return false;
+    }
+    return true;
+  });
+  const board = eligible.length ? eligible : scored;
+  const top = board[0];
+  const recs = board.map((p, i) => {
     let tier: 1 | 2 | 3 = 3;
     if (i === 0 || (top && p.pdr >= top.pdr - 4)) tier = 1;
     else if (p.pdr >= (top?.pdr ?? 0) - 12) tier = 2;
@@ -85,13 +146,40 @@ function reachAdj(p: RankedPlayer, pick: number): number {
   return 0;
 }
 
-function buildReason(
-  p: RankedPlayer,
-  fits: boolean,
-  targetKey: string,
-  survive: number,
-  nextUserPick?: number,
-): string {
+function buildReason(opts: {
+  p: RankedPlayer;
+  fits: boolean;
+  targetKey: string;
+  survive: number;
+  nextUserPick?: number;
+  starterNeed: number;
+  flexNeed: boolean;
+  round: number;
+  draftedRbs: number;
+  extraQb: boolean;
+}): string {
+  const { p, fits, targetKey, survive, nextUserPick, starterNeed, flexNeed, round, draftedRbs, extraQb } = opts;
+  if ((p.pos === "K" || p.pos === "DST") && round < K_DST_MIN_ROUND) {
+    return `Wait until round ${K_DST_MIN_ROUND} for ${p.pos}.`;
+  }
+  if (extraQb) {
+    return `Extraordinary QB value — elite option falling well past ADP ${p.adp.toFixed(0)}.`;
+  }
+  if (p.pos === "QB" && round < QB_WAIT_UNTIL_ROUND) {
+    return `Good QB, but wait unless a top option falls. Skill-position need is higher.`;
+  }
+  if (p.pos === "RB" && draftedRbs === 0) {
+    return `Zero RBs on the roster. RB scarcity makes this the priority over WR/QB.`;
+  }
+  if (starterNeed > 0 && survive < 0.35 && nextUserPick) {
+    return `Still need ${p.pos}. Only ${(survive * 100).toFixed(0)}% chance he lasts to pick ${nextUserPick}.`;
+  }
+  if (starterNeed > 0) {
+    return `Fills a starting ${p.pos} hole (${starterNeed} left) and plays the scarcity.`;
+  }
+  if (flexNeed) {
+    return `Best FLEX (RB/WR/TE) fit given current lineup construction.`;
+  }
   const posLabel = targetKey.startsWith("flex") ? "FLEX" : targetKey === "bench" ? "depth" : targetKey;
   if (fits && survive < 0.35 && nextUserPick) {
     return `${p.pos} is the PDR target. Only ${(survive * 100).toFixed(0)}% chance he lasts to pick ${nextUserPick}.`;
