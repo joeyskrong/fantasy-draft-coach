@@ -6,6 +6,13 @@ export const K_DST_MIN_ROUND = 9;
 /** Default 1QB leagues wait on QB unless a top option is falling. */
 export const QB_WAIT_UNTIL_ROUND = 6;
 
+/** Never take a second QB before this round; even then it is optional. */
+export const QB_BACKUP_MIN_ROUND = 11;
+
+export function qbCount(drafted: Position[]): number {
+  return drafted.filter((p) => p === "QB").length;
+}
+
 export function currentRound(overall: number, teams: number): number {
   return Math.max(1, Math.ceil(overall / teams));
 }
@@ -36,7 +43,7 @@ export function strategyWeight(
   if (pos === "K" || pos === "DST") return round >= K_DST_MIN_ROUND ? 1 : 0.02;
 
   if (pos === "QB") {
-    if (drafted.filter((p) => p === "QB").length >= 1) return 0.2;
+    if (qbCount(drafted) >= 1) return round >= QB_BACKUP_MIN_ROUND ? 0.06 : 0.02;
     const bestQb = available.filter((p) => p.pos === "QB").sort((a, b) => a.adp - b.adp)[0];
     if (bestQb && extraordinaryQbValue(bestQb, overall, teams, available)) return 1.2;
     if (round <= 2) return 0.12;
@@ -132,7 +139,6 @@ export function scarcityBoost(
     if (imminent <= 6) return 6;
     return 0;
   }
-  if (pos === "QB" && imminent <= 2) return 10;
   return 0;
 }
 

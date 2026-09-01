@@ -208,6 +208,26 @@ describe("recommendations and grades", () => {
     expect(matchesPosFilter("K", "FLEX")).toBe(false);
   });
 
+  it("will not recommend a second QB before round 11, and will not make one the pick even later", () => {
+    const draft = createDraft(defaultSettings());
+    const qb = PLAYER_POOL.find((p) => p.pos === "QB" && p.name === "Drake Maye")!;
+    const firstOpen = draft.picks.find((p) => p.teamIndex === draft.settings.userPick && !p.playerId)!;
+    draft.picks = draft.picks.map((p) => (p.overall === firstOpen.overall ? { ...p, playerId: qb.id } : p));
+
+    const round10 = draft.picks.find((p) => p.teamIndex === draft.settings.userPick && p.round === 10)!;
+    draft.currentOverall = round10.overall;
+    const recs10 = recommend(draft);
+    expect(recs10.slice(0, 8).some((r) => r.pos === "QB")).toBe(false);
+    expect(recs10.some((r) => r.recommended && r.pos === "QB")).toBe(false);
+
+    const round11 = draft.picks.find((p) => p.teamIndex === draft.settings.userPick && p.round === 11)!;
+    draft.currentOverall = round11.overall;
+    const recs11 = recommend(draft);
+    expect(recs11[0].recommended).toBe(true);
+    expect(recs11[0].pos).not.toBe("QB");
+    expect(recs11.some((r) => r.recommended && r.pos === "QB")).toBe(false);
+  });
+
   it("grades a completed mock", () => {
     const draft = createDraft(defaultSettings());
     const taken = new Set<string>();

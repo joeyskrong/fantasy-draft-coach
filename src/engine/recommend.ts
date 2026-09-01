@@ -15,7 +15,9 @@ import {
   fillsFlex,
   K_DST_MIN_ROUND,
   matchesPosFilter,
+  QB_BACKUP_MIN_ROUND,
   QB_WAIT_UNTIL_ROUND,
+  qbCount,
   rosterNeedCounts,
   scarcityBoost,
   starterNeedFor,
@@ -54,6 +56,7 @@ export function recommend(state: DraftState): Recommendation[] {
   const lookAhead = Math.min(12, userPicks.length);
   const picks = userPicks.slice(0, lookAhead);
   const drafted = teamPositions(state, state.settings.userPick);
+  const haveQb = qbCount(drafted);
   const needs = remainingNeeds(state.settings.roster, drafted, lookAhead);
   const needCounts = rosterNeedCounts(state.settings.roster, drafted);
   const round = currentRound(state.currentOverall, state.settings.teams);
@@ -92,7 +95,13 @@ export function recommend(state: DraftState): Recommendation[] {
         ? 36 * (1 - weight)
         : 0;
     const extraQb =
-      p.pos === "QB" && extraordinaryQbValue(p, state.currentOverall, state.settings.teams, available) ? 28 : 0;
+      p.pos === "QB" &&
+      haveQb === 0 &&
+      extraordinaryQbValue(p, state.currentOverall, state.settings.teams, available)
+        ? 28
+        : 0;
+    const backupQbPenalty =
+      p.pos === "QB" && haveQb >= 1 ? (round < QB_BACKUP_MIN_ROUND ? 240 : 90) : 0;
     const pdr =
       vor * Math.min(1, 0.35 + weight) +
       (fits ? 16 : 0) +
@@ -101,7 +110,8 @@ export function recommend(state: DraftState): Recommendation[] {
       scarce -
       waitPenalty -
       earlyKdst -
-      qbWait +
+      qbWait -
+      backupQbPenalty +
       extraQb +
       reachAdj(p, state.currentOverall);
     const reason = buildReason({
@@ -114,6 +124,7 @@ export function recommend(state: DraftState): Recommendation[] {
       flexNeed,
       round,
       draftedRbs: drafted.filter((x) => x === "RB").length,
+      haveQb,
       extraQb: extraQb > 0,
     });
     return { ...p, pdr: Math.round(pdr * 10) / 10, tier: 3 as const, reason, nextPickSurvive: survive, recommended: false };
@@ -122,18 +133,19 @@ export function recommend(state: DraftState): Recommendation[] {
   scored.sort((a, b) => b.pdr - a.pdr || b.vor - a.vor);
   const eligible = scored.filter((p) => {
     if ((p.pos === "K" || p.pos === "DST") && round < K_DST_MIN_ROUND) return false;
-    if (p.pos === "QB" && round < 3 && !extraordinaryQbValue(p, state.currentOverall, state.settings.teams, available)) {
+    if (p.pos === "QB" && haveQb >= 1 && round < QB_BACKUP_MIN_ROUND) return false;
+    if (p.pos === "QB" && haveQb === 0 && round < 3 && !extraordinaryQbValue(p, state.currentOverall, state.settings.teams, available)) {
       return false;
     }
     return true;
   });
-  const board = eligible.length ? eligible : scored;
-  const top = board[0];
-  const recs = board.map((p, i) => {
+  const board = eligible.length ? eligible : scored.filter((p) => !(p.pos === "QB" && haveQb >= 1 && round < QB_BACKUP_MIN_ROUND));
+  const top = board.find((p) => !(p.pos === "QB" && haveQb >= 1)) ?? board[0];
+  const recs = board.map((p) => {
     let tier: 1 | 2 | 3 = 3;
-    if (i === 0 || (top && p.pdr >= top.pdr - 4)) tier = 1;
-    else if (p.pdr >= (top?.pdr ?? 0) - 12) tier = 2;
-    return { ...p, tier, recommended: i === 0 };
+    if (top && (p.id === top.id || p.pdr >= top.pdr - 4) && !(p.pos === "QB" && haveQb >= 1)) tier = 1;
+    else if (top && p.pdr >= top.pdr - 12 && !(p.pos === "QB" && haveQb >= 1)) tier = 2;
+    return { ...p, tier, recommended: Boolean(top && p.id === top.id) };
   });
   return recs;
 }
@@ -156,11 +168,17 @@ function buildReason(opts: {
   flexNeed: boolean;
   round: number;
   draftedRbs: number;
+  haveQb: number;
   extraQb: boolean;
 }): string {
-  const { p, fits, targetKey, survive, nextUserPick, starterNeed, flexNeed, round, draftedRbs, extraQb } = opts;
+  const { p, fits, targetKey, survive, nextUserPick, starterNeed, flexNeed, round, draftedRbs, haveQb, extraQb } = opts;
   if ((p.pos === "K" || p.pos === "DST") && round < K_DST_MIN_ROUND) {
     return `Wait until round ${K_DST_MIN_ROUND} for ${p.pos}.`;
+  }
+  if (p.pos === "QB" && haveQb >= 1) {
+    return round < QB_BACKUP_MIN_ROUND
+      ? `You already have a QB. Do not take a second one before round ${QB_BACKUP_MIN_ROUND}.`
+      : `Second QB is optional — skip unless you specifically want a bye-week stash.`;
   }
   if (extraQb) {
     return `Extraordinary QB value — elite option falling well past ADP ${p.adp.toFixed(0)}.`;

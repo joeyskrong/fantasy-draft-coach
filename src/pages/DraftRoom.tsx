@@ -6,7 +6,7 @@ import { availablePlayers, recommend, teamPositions } from "../engine/recommend"
 import { formatPick } from "../engine/draftOrder";
 import { projectPoints } from "../engine/scoring";
 import { rankPlayers } from "../engine/vor";
-import { K_DST_MIN_ROUND, matchesPosFilter, rosterNeedCounts } from "../engine/strategy";
+import { K_DST_MIN_ROUND, matchesPosFilter, QB_BACKUP_MIN_ROUND, rosterNeedCounts } from "../engine/strategy";
 
 type PosFilter = Position | "ALL" | "FLEX";
 const POS_FILTERS: PosFilter[] = ["ALL", "QB", "RB", "WR", "TE", "FLEX", "K", "DST"];
@@ -77,7 +77,7 @@ export function DraftRoom() {
         <section className="rounded-2xl border border-white/10 bg-ink-800/70 p-4">
           <h2 className="font-display text-lg uppercase">PDR board</h2>
           <p className="mb-3 text-xs text-white/50">
-            Recs follow team need and scarcity. Wait on QB unless he falls; K/DST from round {K_DST_MIN_ROUND}.
+            Recs follow team need and scarcity. One QB only (second QB not before round {QB_BACKUP_MIN_ROUND}); K/DST from round {K_DST_MIN_ROUND}.
           </p>
           <div className="mb-3 flex flex-wrap gap-1.5 text-[11px]">
             {(

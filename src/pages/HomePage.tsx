@@ -64,7 +64,7 @@ export function HomePage() {
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-white/70">
               <li>Set league size, your slot, scoring, and roster.</li>
               <li>Optional: add keepers or paste custom projections/ADP.</li>
-              <li>Click players as they come off the board. Recs follow your roster holes and position scarcity — smash RB if you have none, wait on QB unless a top option falls, and hold K/DST until round 9.</li>
+              <li>Click players as they come off the board. Recs follow your roster holes and position scarcity — smash RB if you have none, wait on QB unless a top option falls, skip a second QB (not before round 11, maybe never), and hold K/DST until round 9.</li>
               <li>Use Mock to me between picks. Open Results when the draft is done.</li>
             </ol>
           </article>
