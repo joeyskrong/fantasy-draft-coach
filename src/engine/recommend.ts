@@ -8,6 +8,7 @@ import {
   remainingNeeds,
   survivalToPick,
 } from "./pdr";
+import { availability } from "./availability";
 import { userPickOveralls } from "./draftOrder";
 import {
   currentRound,
@@ -74,30 +75,34 @@ export function recommend(state: DraftState): Recommendation[] {
 
   const plan = picks.length && needs.length ? bestNeedPlan(picks, needs, evByPick) : null;
   const targetKey = plan?.firstKey ?? "bench";
+  const myPick = userPicks[0] ?? state.currentOverall;
+  const onTheClock = state.currentOverall === myPick;
   const nextUserPick = userPicks[1];
 
   const scored = ranked.map((p) => {
     const vor = p.vor;
     const fits = playerFitsNeed(p.pos, targetKey);
     const survive = nextUserPick ? survivalToPick(p, nextUserPick) : 0;
+    const arrive = onTheClock ? 1 : availability(myPick, p.adp, p.adpStd);
     const starterNeed = starterNeedFor(p.pos, needCounts);
     const flexNeed = fillsFlex(p.pos, needCounts);
     const needBoost =
       starterNeed > 0 ? 22 + starterNeed * 8 : flexNeed ? 12 : p.pos === "RB" || p.pos === "WR" || p.pos === "TE" ? 2 : 0;
     const zeroRbBoost = p.pos === "RB" && drafted.filter((x) => x === "RB").length === 0 ? 18 : 0;
-    const scarce = scarcityBoost(p.pos, available, state.currentOverall, nextUserPick, starterNeed + (flexNeed ? 1 : 0));
+    const scarce = scarcityBoost(p.pos, available, myPick, nextUserPick, starterNeed + (flexNeed ? 1 : 0));
     const waitPenalty = survive * 14;
-    const weight = strategyWeight(p.pos, state.currentOverall, state.settings.teams, drafted, available);
+    const ghostPenalty = onTheClock ? 0 : (1 - arrive) * 90;
+    const weight = strategyWeight(p.pos, myPick, state.settings.teams, drafted, available);
     const earlyKdst =
       (p.pos === "K" || p.pos === "DST") && round < K_DST_MIN_ROUND ? 220 : 0;
     const qbWait =
-      p.pos === "QB" && weight < 0.8 && !extraordinaryQbValue(p, state.currentOverall, state.settings.teams, available)
+      p.pos === "QB" && weight < 0.8 && !extraordinaryQbValue(p, myPick, state.settings.teams, available)
         ? 36 * (1 - weight)
         : 0;
     const extraQb =
       p.pos === "QB" &&
       haveQb === 0 &&
-      extraordinaryQbValue(p, state.currentOverall, state.settings.teams, available)
+      extraordinaryQbValue(p, myPick, state.settings.teams, available)
         ? 28
         : 0;
     const backupQbPenalty =
@@ -109,11 +114,12 @@ export function recommend(state: DraftState): Recommendation[] {
       zeroRbBoost +
       scarce -
       waitPenalty -
+      ghostPenalty -
       earlyKdst -
       qbWait -
       backupQbPenalty +
       extraQb +
-      reachAdj(p, state.currentOverall);
+      reachAdj(p, myPick);
     const reason = buildReason({
       p,
       fits,
@@ -126,6 +132,8 @@ export function recommend(state: DraftState): Recommendation[] {
       draftedRbs: drafted.filter((x) => x === "RB").length,
       haveQb,
       extraQb: extraQb > 0,
+      arrive,
+      onTheClock,
     });
     return { ...p, pdr: Math.round(pdr * 10) / 10, tier: 3 as const, reason, nextPickSurvive: survive, recommended: false };
   });
@@ -134,9 +142,10 @@ export function recommend(state: DraftState): Recommendation[] {
   const eligible = scored.filter((p) => {
     if ((p.pos === "K" || p.pos === "DST") && round < K_DST_MIN_ROUND) return false;
     if (p.pos === "QB" && haveQb >= 1 && round < QB_BACKUP_MIN_ROUND) return false;
-    if (p.pos === "QB" && haveQb === 0 && round < 3 && !extraordinaryQbValue(p, state.currentOverall, state.settings.teams, available)) {
+    if (p.pos === "QB" && haveQb === 0 && round < 3 && !extraordinaryQbValue(p, myPick, state.settings.teams, available)) {
       return false;
     }
+    if (!onTheClock && availability(myPick, p.adp, p.adpStd) < 0.2) return false;
     return true;
   });
   const board = eligible.length ? eligible : scored.filter((p) => !(p.pos === "QB" && haveQb >= 1 && round < QB_BACKUP_MIN_ROUND));
@@ -170,8 +179,13 @@ function buildReason(opts: {
   draftedRbs: number;
   haveQb: number;
   extraQb: boolean;
+  arrive: number;
+  onTheClock: boolean;
 }): string {
-  const { p, fits, targetKey, survive, nextUserPick, starterNeed, flexNeed, round, draftedRbs, haveQb, extraQb } = opts;
+  const { p, fits, targetKey, survive, nextUserPick, starterNeed, flexNeed, round, draftedRbs, haveQb, extraQb, arrive, onTheClock } = opts;
+  if (!onTheClock && arrive < 0.2) {
+    return `Likely gone before your pick (ADP ${p.adp.toFixed(1)}).`;
+  }
   if ((p.pos === "K" || p.pos === "DST") && round < K_DST_MIN_ROUND) {
     return `Wait until round ${K_DST_MIN_ROUND} for ${p.pos}.`;
   }

@@ -13,7 +13,7 @@ export type RawPlayer = {
 export const RAW_PLAYERS: RawPlayer[] = [
   { name: "Jahmyr Gibbs", team: "DET", pos: "RB", bye: 6, adp: 1.5, adpStd: 0.7 },
   { name: "Bijan Robinson", team: "ATL", pos: "RB", bye: 11, adp: 2.3, adpStd: 0.7 },
-  { name: "Puka Nacua", team: "LAR", pos: "WR", bye: 11, adp: 2.9, adpStd: 0.8 },
+  { name: "Puka Nacua", team: "LAR", pos: "WR", bye: 11, adp: 2.9, adpStd: 0.6 },
   { name: "Ja'Marr Chase", team: "CIN", pos: "WR", bye: 6, adp: 3.9, adpStd: 1.0 },
   { name: "Jaxon Smith-Njigba", team: "SEA", pos: "WR", bye: 11, adp: 5.5, adpStd: 1.1 },
   { name: "Amon-Ra St. Brown", team: "DET", pos: "WR", bye: 6, adp: 6.4, adpStd: 1.3 },

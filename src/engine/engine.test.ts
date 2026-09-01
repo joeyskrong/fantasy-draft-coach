@@ -157,6 +157,15 @@ describe("recommendations and grades", () => {
     expect(recs[0].tier).toBe(1);
   });
 
+  it("does not plan on Puka at pick 7 — he is gone before then", () => {
+    const draft = createDraft(defaultSettings());
+    expect(draft.currentOverall).toBeLessThan(draft.settings.userPick);
+    const recs = recommend(draft);
+    expect(recs[0].name).not.toBe("Puka Nacua");
+    expect(recs.slice(0, 8).some((r) => r.name === "Puka Nacua")).toBe(false);
+    expect(recs[0].pos).toBe("RB");
+  });
+
   it("prioritizes RB and will not take QB, K, or DST on the first pick", () => {
     const draft = createDraft(defaultSettings());
     const recs = recommend(draft);
