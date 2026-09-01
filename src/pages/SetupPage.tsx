@@ -118,17 +118,28 @@ export function SetupPage() {
             {keepersEnabled && settings.keepers.length > 0 && (
               <div className="mt-4 rounded-xl border border-field-500/30 bg-field-500/10 p-3">
                 <p className="text-xs uppercase tracking-wide text-field-400">Pre-filled keepers</p>
-                <ul className="mt-2 space-y-1 text-sm">
-                  {settings.keepers.map((k) => {
-                    const p = PLAYER_POOL.find((x) => x.id === k.playerId);
+                <div className="mt-2 max-h-64 space-y-2 overflow-auto text-sm">
+                  {Array.from({ length: settings.teams }, (_, i) => i + 1).map((teamIndex) => {
+                    const rows = settings.keepers.filter((k) => k.teamIndex === teamIndex);
+                    if (!rows.length) return null;
                     return (
-                      <li key={k.playerId} className="flex justify-between gap-2">
-                        <span>{p?.name} <span className="text-white/45">{p?.team}</span></span>
-                        <span className="font-mono text-white/70">Rd {k.round ?? "start"}</span>
-                      </li>
+                      <div key={teamIndex}>
+                        <p className="text-xs font-semibold text-white/70">{settings.teamNames[teamIndex - 1]}</p>
+                        <ul className="mt-1 space-y-0.5">
+                          {rows.map((k) => {
+                            const p = PLAYER_POOL.find((x) => x.id === k.playerId);
+                            return (
+                              <li key={k.playerId} className="flex justify-between gap-2">
+                                <span>{p?.name} <span className="text-white/45">{p?.team}</span></span>
+                                <span className="font-mono text-white/70">Rd {k.round ?? "start"}</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
                     );
                   })}
-                </ul>
+                </div>
               </div>
             )}
           </section>
@@ -309,7 +320,7 @@ export function SetupPage() {
         <section className="rounded-2xl border border-white/10 bg-ink-800/70 p-5">
           <h2 className="font-display text-xl uppercase">Consensus projections</h2>
           <p className="mt-2 text-sm text-white/60">
-            Built from August 2026 ADP. After the draft starts you can edit any player&apos;s projection and ADP in the draft room.
+            Built from September 1, 2026 12-team PPR ADP (Fantasy Football Calculator, 8,101 drafts). After the draft starts you can edit any player&apos;s projection and ADP in the draft room.
             Sample PPR values for the current scoring preset:
           </p>
           <div className="mt-4 max-h-96 overflow-auto rounded-lg border border-white/10">

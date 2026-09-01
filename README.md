@@ -11,22 +11,33 @@ Live fantasy football draft assistant for 2026. Rebuild of the classic Draft Pre
 - Searchable player pool with 2026 ADP, projections, RB handcuffs, and highlights
 - Mock to your pick or auto-complete the room, then grade every team
 
-## Run locally
+## Open the app
+
+There is no live site on the GitHub repo page itself. After you turn on Pages once
+(`Settings → Pages → Deploy from branch → gh-pages → /`), the app is at:
+
+**https://joeyskrong.github.io/fantasy-draft-coach/**
+
+Until then, run it locally:
 
 ```bash
+git clone https://github.com/joeyskrong/fantasy-draft-coach.git
+cd fantasy-draft-coach
+git checkout cursor/rebuild-fantasy-draft-coach-41ba
+git pull origin cursor/rebuild-fantasy-draft-coach-41ba
 npm install
-npm test
 npm run dev
 ```
 
-Open the printed local URL (Vite defaults to http://localhost:5173).
+Open **http://localhost:5173**, then **Start draft setup**. Team 1 keepers include David Montgomery in **round 5**.
+
+If an old tab is still open, stop the old `npm run dev` (Ctrl+C), pull, start it again, and hard-refresh the browser (Cmd+Shift+R).
 
 ```bash
+npm test
 npm run build
 npm run preview
 ```
-
-The app is a client-side SPA. Drafts persist in `localStorage` so you can refresh mid-draft.
 
 ## How PDR works
 

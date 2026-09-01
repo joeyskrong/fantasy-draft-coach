@@ -176,7 +176,7 @@ function evForNeed(needKey: string, evs: Record<Position, PositionValue> | undef
     return Math.max(...eligible.map((p) => evs[p]?.ev ?? 0), 0);
   }
   if (needKey === "bench") {
-    return Math.max(evs.RB.ev, evs.WR.ev, evs.TE.ev, evs.QB.ev * 0.55, evs.K.ev * 0.35, evs.DST.ev * 0.35);
+    return Math.max(evs.RB.ev, evs.WR.ev, evs.TE.ev, evs.QB.ev * 0.12, evs.K.ev * 0.35, evs.DST.ev * 0.35);
   }
   return evs[needKey as Position]?.ev ?? 0;
 }

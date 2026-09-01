@@ -1,11 +1,11 @@
 import { createContext, createElement, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { DraftState, HighlightColor, LeagueSettings, Player, Screen } from "../types";
 import { PLAYER_POOL } from "../data/players";
-import { defaultSettings } from "../data/defaults";
-import { buildBoard, firstOpenOverall } from "../engine/draftOrder";
+import { defaultSettings, withLatestKeepers } from "../data/defaults";
+import { buildBoard, firstOpenOverall, refreshKeeperPicks } from "../engine/draftOrder";
 import { cpuPick } from "../engine/recommend";
 
-const STORAGE_KEY = "fdc.draft.v2";
+const STORAGE_KEY = "fdc.draft.v6";
 
 function uid(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -60,9 +60,17 @@ export function DraftProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as { screen: Screen; settings: LeagueSettings; draft: DraftState | null };
-      if (parsed.settings) setSettings(parsed.settings);
+      const settings = parsed.settings ? withLatestKeepers(parsed.settings) : defaultSettings();
+      setSettings(settings);
       if (parsed.draft) {
-        setDraft(parsed.draft);
+        const livePicks = parsed.draft.picks.some((p) => p.playerId && !p.keeper);
+        if (!livePicks) {
+          setDraft(null);
+          setScreen("home");
+          return;
+        }
+        const picks = refreshKeeperPicks(parsed.draft.picks, settings);
+        setDraft({ ...parsed.draft, settings, picks, currentOverall: firstOpenOverall(picks) });
         setScreen(parsed.screen === "home" ? "draft" : parsed.screen);
       }
     } catch {
