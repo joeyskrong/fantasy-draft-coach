@@ -1,0 +1,10 @@
+{
+  "name": "Fantasy Draft Coach",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "npm run dev -- --host"
+    }
+  ]
+}
